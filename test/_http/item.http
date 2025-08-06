@@ -1,0 +1,19 @@
+# Create Item
+POST http://localhost:8080/items
+Content-Type: application/json
+
+{
+  "name": "first"
+}
+
+###
+
+# List Items
+GET http://localhost:8080/items
+
+###
+
+
+# Get Item by ID
+GET http://localhost:8080/items/62d0b0c0e2c1d1c9b1b9a9a9
+Content-Type: application/json

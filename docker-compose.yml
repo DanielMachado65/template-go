@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+  mongo:
+    image: mongo:7
+    container_name: gin_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+  api:
+    build: .
+    container_name: gin_api
+    depends_on:
+      - mongo
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=appdb
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+volumes:
+  mongo_data:
