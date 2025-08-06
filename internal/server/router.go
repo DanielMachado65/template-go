@@ -17,6 +17,7 @@ func NewRouter(db *mongo.Database) *gin.Engine {
 	items := r.Group("/items")
 	{
 		items.GET("", handlers.ListItems(db))
+		items.GET("/:id", handlers.GetItem(db))
 		items.POST("", handlers.CreateItem(db))
 	}
 

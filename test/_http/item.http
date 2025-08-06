@@ -15,5 +15,5 @@ GET http://localhost:8080/items
 
 
 # Get Item by ID
-GET http://localhost:8080/items/62d0b0c0e2c1d1c9b1b9a9a9
+GET http://localhost:8080/items/689376daa0487c91d6071584
 Content-Type: application/json
