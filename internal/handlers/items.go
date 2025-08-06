@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,22 +15,74 @@ import (
 	"template-go.com/internal/models"
 )
 
-const collectionName = "items"
-
 type createItemDTO struct {
 	Name string `json:"name" binding:"required"`
 }
 
+const (
+	collectionName       = "items"
+	defaultLimit   int64 = 20
+	maxLimit       int64 = 100
+	maxPage              = 1000
+	maxQLen              = 50
+)
+
 func ListItems(db *mongo.Database) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		q := c.Query("q")
-		filter := bson.M{}
-		if q != "" {
-			filter["name"] = bson.M{"$regex": q, "$options": "i"}
+		if len(q) > maxQLen {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "q too long"})
+			return
 		}
 
-		limit := int64(50)
-		opts := options.Find().SetLimit(limit)
+		limit := defaultLimit
+		if v := c.Query("limit"); v != "" {
+			if n, err := strconv.ParseInt(v, 10, 64); err == nil {
+				if n < 1 {
+					n = 1
+				}
+				if n > maxLimit {
+					n = maxLimit
+				}
+				limit = n
+			}
+		}
+		page := 1
+		if v := c.Query("page"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil {
+				if n < 1 {
+					n = 1
+				}
+				if n > maxPage {
+					n = maxPage
+				}
+				page = n
+			}
+		}
+		skip := int64((page - 1) * int(int(limit)))
+
+		sortField := c.DefaultQuery("sort", "created_at")
+		if sortField != "name" && sortField != "created_at" {
+			sortField = "created_at"
+		}
+		order := c.DefaultQuery("order", "desc")
+		orderVal := int32(-1) // desc
+		if order == "asc" {
+			orderVal = 1
+		}
+
+		filter := bson.M{}
+		if q != "" {
+			safe := regexp.QuoteMeta(q)
+			filter["name"] = bson.M{"$regex": "^" + safe, "$options": "i"}
+		}
+
+		opts := options.Find().
+			SetLimit(limit).
+			SetSkip(skip).
+			SetSort(bson.D{{Key: sortField, Value: orderVal}}).
+			SetMaxTime(2 * time.Second).
+			SetAllowDiskUse(false)
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 		defer cancel()
@@ -53,6 +107,7 @@ func ListItems(db *mongo.Database) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+
 		c.JSON(http.StatusOK, items)
 	}
 }
