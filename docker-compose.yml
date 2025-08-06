@@ -1,24 +1,31 @@
-version: "3.9"
 services:
   mongo:
     image: mongo:7
-    container_name: gin_mongo
-    ports:
-      - "27017:27017"
+    ports: ["27017:27017"]
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "echo 'db.runCommand({ ping: 1 })' | mongosh --quiet mongodb://localhost:27017/test || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   api:
     build: .
-    container_name: gin_api
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     environment:
       - MONGO_URI=mongodb://mongo:27017
       - DB_NAME=appdb
       - PORT=8080
-    ports:
-      - "8080:8080"
+    ports: ["8080:8080"]
     volumes:
       - .:/app
+
 volumes:
   mongo_data:

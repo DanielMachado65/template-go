@@ -1,3 +1,4 @@
+// internal/db/mongo.go
 package db
 
 import (
@@ -10,16 +11,13 @@ import (
 )
 
 func Connect(ctx context.Context, uri, dbName string) (*mongo.Client, *mongo.Database, error) {
+	// Conecta de uma vez só
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if err := client.Connect(ctx); err != nil {
-		return nil, nil, err
-	}
-
-	// Ping with timeout
+	// Ping com timeout curto
 	pingCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	if err := client.Ping(pingCtx, readpref.Primary()); err != nil {
