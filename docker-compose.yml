@@ -39,6 +39,7 @@ services:
       - MONGO_URI=mongodb://mongo:27017
       - DB_NAME=appdb
       - PORT=8080
+      - AIR_WATCHER=polling  # Use polling for file changes
     ports: ["8080:8080"]
     volumes:
       - .:/app
