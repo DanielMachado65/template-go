@@ -15,7 +15,23 @@ services:
       retries: 20
 
   api:
-    build: .
+    build:
+      context: .
+      target: runtime
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      - MONGO_URI=mongodb://mongo:27017
+      - DB_NAME=appdb
+      - PORT=8080
+    ports: ["8080:8080"]
+
+  api-dev:
+    build:
+      context: .
+      target: dev
+    working_dir: /app
     depends_on:
       mongo:
         condition: service_healthy
